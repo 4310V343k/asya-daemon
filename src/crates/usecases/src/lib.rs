@@ -33,32 +33,48 @@ pub async fn subscribe_for_plugins() {
 pub async fn dispatch_by_user_message(message: String) {
     let schema = schemars::schema_for!(Usecases);
 
-    let req = format!(
+    let c_req = format!(
         "
-            Generate json representation of command from this user input: {}
-            by this json schema fo available commands: {}
-
-            SEND ME ONLY GENERATED JSON
-
+            Determine whether the following user input: {} is similar to any of the commands below. 
+            {}
+            If it is similar, respond with a single word: TRUE. 
+            If it is not similar, respond with a single word: FALSE.
         ",
         message,
         serde_json::to_string_pretty(&schema).unwrap()
     );
 
-    let llm_response = llm_api::send_request(req).await;
+    let c_llm_response = llm_api::send_request(c_req).await;
+    let usecase = if c_llm_response.unwrap() == "TRUE" {
+        let g_req = format!(
+            "
+                Generate json representation of command from this user input: {}
+                by this json schema fo available commands: {}
 
-    if llm_response.is_err() {
-        warn!("Error sending request to LLM: {:?}", llm_response.err());
-        return;
-    }
-    let llm_response = llm_response.unwrap();
-    debug!("LLM RESPONSE: {}", llm_response);
-    let usecase = process_response(&llm_response);
-    if let Err(err) = usecase {
-        warn!("Error parsing response from LLM: {:?}", err);
-        return;
-    }
-    let usecase = usecase.unwrap();
+                SEND ME ONLY GENERATED JSON
+
+            ",
+            message,
+            serde_json::to_string_pretty(&schema).unwrap()
+        );
+
+        let g_llm_response = llm_api::send_request(g_req).await;
+
+        if g_llm_response.is_err() {
+            warn!("Error sending request to LLM: {:?}", g_llm_response.err());
+            return;
+        }
+        let llm_response = g_llm_response.unwrap();
+        debug!("LLM RESPONSE: {}", llm_response);
+        let usecase = process_response(&llm_response);
+        if let Err(err) = usecase {
+            warn!("Error parsing response from LLM: {:?}", err);
+            return;
+        }
+        usecase.unwrap()
+    } else {
+        usecases::Usecases::Answer
+    };
     usecase.execute(message).await;
 }
 

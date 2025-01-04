@@ -22,6 +22,7 @@ pub enum Usecases {
     },
 
     StartBasicSystemMonitoring,
+    Answer,
 }
 
 #[derive(Serialize, Stringify, Deserialize, Debug, Clone, schemars::JsonSchema)]
@@ -68,6 +69,7 @@ impl Usecases {
                 system_monitoring::start_basic_monitoring(userinput).await
             }
             Usecases::Open { app_kind } => open::open(app_kind).await,
+            Usecases::Answer => geranal_answer::answer(userinput).await,
         }
     }
 }

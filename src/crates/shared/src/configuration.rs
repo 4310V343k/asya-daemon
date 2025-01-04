@@ -100,6 +100,7 @@ pub enum ConfigFieldType {
 #[derive(Debug, Property)]
 #[property(name(AiProperty), derive(Deserialize, Default, Clone))]
 pub struct Ai {
+    /// Path to prompts.
     #[property(default("./ai-prompts.yaml".to_string()))]
     pub prompts_path: String,
 

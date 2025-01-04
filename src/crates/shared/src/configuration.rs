@@ -100,6 +100,9 @@ pub enum ConfigFieldType {
 #[derive(Debug, Property)]
 #[property(name(AiProperty), derive(Deserialize, Default, Clone))]
 pub struct Ai {
+    #[property(default("./ai-prompts.yaml".to_string()))]
+    pub prompts_path: String,
+
     /// Groq API token.
     ///
     /// Groq used for recognizing user input to commands and generating answers.

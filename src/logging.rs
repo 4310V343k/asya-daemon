@@ -49,7 +49,7 @@ fn build_config(config: log4rs::config::runtime::ConfigBuilder, logfile: FileApp
                 .appender("file")
                 .build(CONFIG.logging.level),
         )
-        .unwrap()
+        .unwrap() // Если stdout не включать, то паника
 }
 
 fn enable_file() -> FileAppender {

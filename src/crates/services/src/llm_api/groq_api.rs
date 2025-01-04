@@ -9,12 +9,12 @@ pub async fn send_to_groq(req: String) -> Result<String, AiRequestError> {
     let url = "https://api.groq.com/openai/v1/chat/completions";
     let api_key = CONFIG.ai.groq_token.clone();
 
-    construct_and_send_reqwest(req, client, url, api_key)
+    construct_and_send_request(req, client, url, api_key)
         .await
         .ok_or(AiRequestError::GroqRequest)
 }
 
-async fn construct_and_send_reqwest(
+async fn construct_and_send_request(
     req: String,
     client: Client,
     url: &str,

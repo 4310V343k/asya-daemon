@@ -106,7 +106,7 @@ pub struct Ai {
     /// Groq API token.
     ///
     /// Groq used for recognizing user input to commands and generating answers.
-    #[property(default)]
+    #[property(default("NOT".to_string()))]
     pub groq_token: String,
 
     /// Method used for ai recognizing user input.

@@ -1,5 +1,6 @@
 use alta_s_api::send_to_altas;
 use groq_api::send_to_groq;
+use log::warn;
 use reqwest::Client;
 use shared::{configuration::CONFIG, types::AiRecognizeMethod};
 
@@ -19,7 +20,14 @@ pub enum AiRequestError {
 /// Returns `None` if token unspecified or ошибка случилась
 pub async fn send_request(req: String) -> Result<String, AiRequestError> {
     match &CONFIG.ai.recognize_method {
-        AiRecognizeMethod::Groq => send_to_groq(req).await,
+        AiRecognizeMethod::Groq => {
+            if &CONFIG.ai.groq_token == "NOT" {
+                warn!("GROQ is curently uses for Ai features, but token was not specified.");
+                Err(AiRequestError::GroqRequest)
+            } else {
+                send_to_groq(req).await
+            }
+        }
         AiRecognizeMethod::AltaS => send_to_altas(req).await,
         AiRecognizeMethod::None => Err(AiRequestError::GroqRequest), // nothing for recognize, so just return command
     }

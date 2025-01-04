@@ -13,7 +13,7 @@ use mlua::{Lua, Table, ToLua};
 lazy_static! {
     pub static ref CONFIG: Config = {
         let config_path = vec![format!(
-            "{}/.config/asya/asya-config.lua",
+            "{}/.config/asya/config.lua",
             my_home().unwrap().unwrap().to_str().unwrap().to_string()
         )];
 

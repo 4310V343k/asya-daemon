@@ -1,72 +1,50 @@
-use log::*;
-use log4rs::{
-    append::{console::ConsoleAppender, file::FileAppender},
-    config::{Appender, Root},
-    encode::pattern::PatternEncoder,
-    Config,
+use std::{
+    fs::{self, File},
+    path::Path,
 };
-use shared::configuration::CONFIG;
+use tracing::*;
+use tracing_subscriber::EnvFilter;
+
+use shared::configuration::{LoggingLevel, CONFIG};
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub fn init_logging() {
-    let console_pattern = match CONFIG.logging.place {
-        true => "{f}:{L}: {d(%Y-%m-%d %H:%M:%S)} SERVER {h({l}):5.5}>>> {m}\n",
-        false => "{d(%Y-%m-%d %H:%M:%S)} SERVER {h({l}):5.5}>>> {m}\n",
+    let console_layer = fmt::layer().with_writer(std::io::stdout).pretty();
+    let file_layer = fmt::layer().with_writer(make_writer()).with_ansi(false);
+
+    let env_filter = EnvFilter::from_default_env()
+        .add_directive(CONFIG.logging.level.as_str().parse().unwrap())
+        .add_directive("other_module=warn".parse().unwrap());
+
+    let sub = tracing_subscriber::registry()
+        .with(env_filter)
+        .with(file_layer);
+
+    if CONFIG.logging.stdout {
+        sub.with(console_layer).init();
+    } else {
+        sub.init();
     };
-    let config = match CONFIG.logging.stdout {
-        true => Config::builder().appender(
-            Appender::builder().build("console", Box::new(enable_console(console_pattern))),
-        ),
-        false => Config::builder(),
-    };
 
-    log4rs::init_config(build_config(config, enable_file())).unwrap();
-
-    info!("Logging level: {}", CONFIG.logging.level);
-    info!("Logging to: {}", CONFIG.logging.folder);
-
-    if log_enabled!(log::Level::Trace) {
-        log_check();
+    if let LoggingLevel::Trace = CONFIG.logging.level {
+        trace!("Check logging level.");
+        debug!("Check logging level.");
+        info!("Check logging level.");
+        warn!("Check logging level.");
+        error!("Check logging level.");
     }
 }
 
-fn log_check() {
-    trace!("trace logging example (THIS ISN'T ERROR) - - - - - - OK");
-    debug!("debug logging example (THIS ISN'T ERROR) - - - - - - OK");
-    info!("info  logging example (THIS ISN'T ERROR) - - - - - - OK");
-    warn!("warn  logging example (THIS ISN'T ERROR) - - - - - - OK");
-    error!("error logging example (THIS ISN'T ERROR) - - - - - - OK\n------------------------------------------------------------");
-}
+fn make_writer() -> File {
+    let filename = format!(
+        "{}/{}asya_logs.log",
+        CONFIG.logging.folder,
+        chrono::Local::now().format("%Y-%m-%d_%H-%M-%S_")
+    );
 
-fn build_config(config: log4rs::config::runtime::ConfigBuilder, logfile: FileAppender) -> Config {
-    config
-        .appender(Appender::builder().build("file", Box::new(logfile)))
-        .logger(log4rs::config::Logger::builder().build("teloxide", log::LevelFilter::Off))
-        .logger(log4rs::config::Logger::builder().build("hyper", log::LevelFilter::Off))
-        .logger(log4rs::config::Logger::builder().build("reqwest", log::LevelFilter::Off))
-        .build(
-            Root::builder()
-                .appender("console")
-                .appender("file")
-                .build(CONFIG.logging.level),
-        )
-        .unwrap() // Если stdout не включать, то паника
-}
-
-fn enable_file() -> FileAppender {
-    FileAppender::builder()
-        .encoder(Box::new(PatternEncoder::new(
-            "{f}:{L}: {d(%Y-%m-%d %H:%M:%S)} {h(SERVER)} - {l} > {m}\n",
-        )))
-        .build(format!(
-            "{}/{}aska_logs.log",
-            CONFIG.logging.folder,
-            chrono::Local::now().format("%Y-%m-%d_%H-%M-%S_")
-        ))
-        .unwrap()
-}
-
-fn enable_console(console_pattern: &str) -> ConsoleAppender {
-    ConsoleAppender::builder()
-        .encoder(Box::new(PatternEncoder::new(console_pattern)))
-        .build()
+    let path = Path::new(&CONFIG.logging.folder);
+    if !path.exists() {
+        fs::create_dir_all(path).expect("The application should be able to create folder to store logs.");
+    }
+    File::create_new(filename).expect("The application should be able to create a log file in specified folder.")
 }

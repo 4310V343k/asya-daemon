@@ -7,11 +7,7 @@ use std::{collections::HashMap, fmt::Debug};
 use crate::types::AiRecognizeMethod;
 use homedir::my_home;
 use lazy_static::lazy_static;
-use log::LevelFilter;
-use mlua::{Lua, Table, ToLua, Value};
-
-use crate::de;
-use crate::error::Error;
+use mlua::{Lua, Table, ToLua};
 
 lazy_static! {
     pub static ref CONFIG: Config = {
@@ -30,7 +26,7 @@ lazy_static! {
                     .expect("Lua configuration file must be correct to evaluate");
 
                 let config: ConfigProperty =
-                    from_value(config_lua.to_lua(&lua).unwrap())
+                    mlua_serde::from_value(config_lua.to_lua(&lua).unwrap())
                         .expect("Lua config table must be correct to desiralize into Rust struct");
 
                 config
@@ -43,11 +39,6 @@ lazy_static! {
         merged_config.verify().unwrap();
         merged_config.unwrap_or_default()
     };
-}
-
-pub fn from_value<'de, T: serde::Deserialize<'de>>(value: Value<'de>) -> Result<T, Error> {
-    let deserializer = de::Deserializer { value };
-    Ok(T::deserialize(deserializer)?)
 }
 
 pub fn load_any_file(pathes: Vec<String>) -> Option<(String, String)> {
@@ -156,11 +147,8 @@ pub struct Net {
 #[derive(Debug, Property)]
 #[property(name(LoggingProperty), derive(Deserialize, Default, Clone))]
 pub struct Logging {
-    #[property(default)]
-    pub place: bool,
-
-    #[property(default(LevelFilter::Info))]
-    pub level: LevelFilter,
+    #[property(default(LoggingLevel::Info))]
+    pub level: LoggingLevel,
 
     #[property(default("./logs".to_string()))]
     pub folder: String,
@@ -170,6 +158,41 @@ pub struct Logging {
 
     #[property(default(true))]
     pub stdout: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(from = "String")]
+pub enum LoggingLevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl From<String> for LoggingLevel {
+    fn from(value: String) -> Self {
+        match value.as_str().to_lowercase().as_str() {
+            "error" => LoggingLevel::Error,
+            "warn" => LoggingLevel::Warn,
+            "info" => LoggingLevel::Info,
+            "debug" => LoggingLevel::Debug,
+            "trace" => LoggingLevel::Trace,
+            _ => panic!("Cannot recognize logging level: {}", value),
+        }
+    }
+}
+
+impl LoggingLevel {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            LoggingLevel::Error => "error",
+            LoggingLevel::Warn => "warn",
+            LoggingLevel::Info => "info",
+            LoggingLevel::Debug => "debug",
+            LoggingLevel::Trace => "trace",
+        }
+    }
 }
 
 #[derive(Debug, Property)]

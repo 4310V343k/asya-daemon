@@ -1,11 +1,11 @@
 use crate::usecases::Usecases;
-use tracing::*;
 use serde::Serialize;
 use services::llm_api;
 use shared::event_system;
 use shared::plugin_system::ReadableRequest;
 use std::sync::Arc;
 use tokio::task;
+use tracing::*;
 
 pub mod scenarios;
 pub mod shared_workers;
@@ -102,4 +102,11 @@ pub enum AsyaResponse {
     /// ```
     #[display("{message}")]
     Ok { message: String },
+
+    /// Represents error.
+    ///
+    /// Although this `AsyaResponse`, this invariant represents message that will be shouldn't
+    /// displayed to user.
+    #[display("{message}")]
+    Err { message: String },
 }

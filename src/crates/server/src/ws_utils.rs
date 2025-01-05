@@ -87,8 +87,13 @@ async fn subscribe_to_asya_response(session: Arc<RwLock<Session>>) {
         move |event: Arc<AsyaResponse>| {
             let session = session.clone();
             task::spawn(async move {
+                let is_err = match *event {
+                    AsyaResponse::Err { message: _ } => true,
+                    AsyaResponse::Ok { message: _ } => false,
+                };
+
                 let response = Responses::Base {
-                    is_err: false,
+                    is_err,
                     message: event.to_string().replace("\"", ""),
                 };
 

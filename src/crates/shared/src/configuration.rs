@@ -144,7 +144,10 @@ pub struct Ai {
 #[property(name(NetProperty), derive(Deserialize, Default, Clone))]
 pub struct Net {
     #[property(default)]
-    pub http_port: u16,
+    pub ws_port: u16,
+
+    #[property(default("127.0.0.1".to_string()))]
+    pub ws_ip: String,
 
     #[property(default)]
     pub proxy_addr: String, // todo

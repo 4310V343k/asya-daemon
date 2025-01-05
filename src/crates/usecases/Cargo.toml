@@ -21,7 +21,6 @@ http-body-util = "0.1.2"
 parse-display = "0.10.0"
 
 mlua = { version = "*", features = ["luajit"] }
-mlua_serde = { version = "0.6.0", features = ["luajit"] }
 
 serde_yaml = "0.9.34"
 homedir = "0.3.4"

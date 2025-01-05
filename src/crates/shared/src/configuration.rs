@@ -134,7 +134,7 @@ pub struct Ai {
 #[derive(Debug, Property)]
 #[property(name(NetProperty), derive(Deserialize, Default, Clone))]
 pub struct Net {
-    #[property(default)]
+    #[property(default(3001))]
     pub ws_port: u16,
 
     #[property(default("127.0.0.1".to_string()))]

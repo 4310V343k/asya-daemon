@@ -1,4 +1,5 @@
 use macros::Stringify;
+
 use serde::{Deserialize, Serialize};
 use tracing::*;
 
@@ -43,19 +44,8 @@ pub enum Usecases {
     ///  - Go back to the last track.
     PlayPrevTrack,
 
-    /// Open desktop app.
-    ///
-    /// # Examples
-    ///  - Open the Spotify app.
-    ///  - Launch the YouTube application.
-    #[serde(rename_all = "camelCase")]
-    Open { app_kind: AppKind },
+    OpenApp(String),
 
-    /// Starts system monitoring.
-    ///
-    /// # Examples
-    ///  - Start monitoring system health.
-    ///  - Turn on the system status tracking.
     StartBasicSystemMonitoring,
 
     /// If no other options are suitable, then this is a simple request from a language model.
@@ -66,30 +56,10 @@ pub enum Usecases {
     Answer,
 }
 
-#[derive(Serialize, Stringify, Deserialize, Debug, Clone, schemars::JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum AppKind {
-    Terminal,
-    Browser,
-    Steam,
-    Discord,
-    Telegram,
-    Specific(App),
-}
-
-#[derive(Serialize, Stringify, Deserialize, Debug, Clone, schemars::JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum App {
-    // Tui(String),
-    Gui(String),
-}
-
 impl Usecases {
     pub fn stringify_all() -> String {
         let strings = [
             Usecases::stringify_one(),
-            AppKind::stringify_one(),
-            App::stringify_one(),
         ];
         let iter = strings.iter().map(|el| el.to_string() + "\n\n");
         String::from_iter(iter)
@@ -109,7 +79,7 @@ impl Usecases {
             Usecases::StartBasicSystemMonitoring => {
                 system_monitoring::start_basic_monitoring(userinput).await
             }
-            Usecases::Open { app_kind } => open::open(app_kind).await,
+            Usecases::OpenApp(app) => open_app::open(app).await,
             Usecases::Answer => geranal_answer::answer(userinput).await,
         }
     }
